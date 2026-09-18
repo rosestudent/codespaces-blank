@@ -1,0 +1,672 @@
+/* ============================================
+   FIGHTING FORCE MMA - STYLESHEET
+   ============================================ */
+
+/* CSS Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #114ab4;        /* Fighting red */
+    --secondary-color: #f4a261;      /* Warm orange */
+    --dark-bg: #0a0a0a;              /* Deep black */
+    --darker-bg: #050505;            /* Almost black */
+    --card-bg: #1a1a1a;              /* Dark gray */
+    --text-light: #f1f1f1;           /* Off-white */
+    --text-muted: #a0a0a0;           /* Gray text */
+    --border-color: #2a2a2a;         /* Subtle borders */
+    --max-width: 1200px;
+    --transition: all 0.3s ease;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-light);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+header {
+    background: linear-gradient(135deg, var(--darker-bg) 0%, var(--dark-bg) 100%);
+    text-align: center;
+    padding: 60px 20px 40px;
+    border-bottom: 3px solid var(--primary-color);
+    position: relative;
+    overflow: hidden;
+}
+
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="%23e63946" opacity="0.1"/></svg>');
+    background-size: 50px 50px;
+    opacity: 0.5;
+}
+
+header h1 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: var(--text-light);
+    text-shadow: 2px 2px 4px rgba(230, 57, 70, 0.3);
+    position: relative;
+    margin-bottom: 10px;
+}
+
+header p {
+    font-size: 1.3rem;
+    color: var(--secondary-color);
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    position: relative;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+nav {
+    background-color: var(--darker-bg);
+    padding: 18px 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 16px;
+    margin: 0 5px;
+    border-radius: 4px;
+    transition: var(--transition);
+    display: inline-block;
+}
+
+nav a:hover {
+    color: var(--primary-color);
+    background-color: rgba(230, 57, 70, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Remove the pipe separators from HTML or hide them */
+nav a[href="#home"]::before,
+nav a::after {
+    content: none;
+}
+
+/* ============================================
+   HORIZONTAL RULES
+   ============================================ */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    margin: 0;
+}
+
+/* ============================================
+   SECTIONS
+   ============================================ */
+section {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 60px 20px;
+}
+
+section h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--text-light);
+    margin-bottom: 25px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+section h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 2px;
+}
+
+section h3 {
+    font-size: 1.4rem;
+    color: var(--secondary-color);
+    margin-top: 30px;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+section p {
+    color: var(--text-muted);
+    margin-bottom: 15px;
+    font-size: 1.05rem;
+}
+
+/* ============================================
+   HOME SECTION
+   ============================================ */
+#home {
+    text-align: center;
+    padding: 80px 20px;
+    background: linear-gradient(180deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+}
+
+#home h2 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+#home h2::after {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#home p strong {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    display: block;
+    margin-bottom: 15px;
+}
+
+#home a {
+    display: inline-block;
+    margin: 10px;
+    padding: 14px 35px;
+    background: linear-gradient(135deg, var(--primary-color), #c1121f);
+    color: white;
+    text-decoration: none;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+}
+
+#home a:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(230, 57, 70, 0.5);
+}
+
+/* ============================================
+   ABOUT SECTION
+   ============================================ */
+#about ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+#about li {
+    padding: 10px 0 10px 30px;
+    position: relative;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+}
+
+#about li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* ============================================
+   TRAINING SECTION
+   ============================================ */
+#training h3 {
+    color: var(--primary-color);
+    border-left: 4px solid var(--primary-color);
+    padding-left: 15px;
+    margin-top: 25px;
+}
+
+#training p {
+    padding-left: 19px;
+}
+
+/* ============================================
+   TABLES (Classes, Budget, Timeframe)
+   ============================================ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+th {
+    background: linear-gradient(135deg, var(--primary-color), #c1121f);
+    color: white;
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+
+td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+tr:hover {
+    background-color: rgba(230, 57, 70, 0.05);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* Budget table specific */
+#budget table tr:last-child {
+    background-color: rgba(230, 57, 70, 0.1);
+    font-weight: 700;
+}
+
+#budget table tr:last-child td {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+/* ============================================
+   MEMBERSHIP SECTION
+   ============================================ */
+#membership h3 {
+    background-color: var(--card-bg);
+    padding: 15px 20px;
+    border-radius: 6px 6px 0 0;
+    margin-bottom: 0;
+    border-left: 4px solid var(--primary-color);
+}
+
+#membership ul {
+    background-color: var(--card-bg);
+    list-style: none;
+    padding: 20px;
+    border-radius: 0 0 6px 6px;
+    margin-bottom: 25px;
+    border: 1px solid var(--border-color);
+    border-top: none;
+}
+
+#membership li {
+    padding: 8px 0;
+    color: var(--text-muted);
+    position: relative;
+    padding-left: 25px;
+}
+
+#membership li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--secondary-color);
+}
+
+#membership a {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 12px 30px;
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 6px;
+    transition: var(--transition);
+}
+
+#membership a:hover {
+    background: #c1121f;
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   GALLERY SECTION
+   ============================================ */
+#gallery {
+    text-align: center;
+}
+
+#gallery img {
+    width: 300px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin: 8px;
+    transition: var(--transition);
+    border: 2px solid var(--border-color);
+    filter: grayscale(30%);
+}
+
+#gallery img:hover {
+    transform: scale(1.05);
+    border-color: var(--primary-color);
+    filter: grayscale(0%);
+    box-shadow: 0 8px 25px rgba(230, 57, 70, 0.3);
+}
+
+/* ============================================
+   TESTIMONIALS
+   ============================================ */
+#testimonials h3 {
+    color: var(--secondary-color);
+    margin-top: 30px;
+}
+
+#testimonials p {
+    font-style: italic;
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+    position: relative;
+}
+
+#testimonials p:last-of-type {
+    background: none;
+    padding: 10px 0 0 20px;
+    border: none;
+    font-style: normal;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+/* ============================================
+   CONTACT SECTION
+   ============================================ */
+#contact h3 {
+    margin-top: 35px;
+    color: var(--secondary-color);
+}
+
+#contact p strong {
+    color: var(--text-light);
+}
+
+/* Form Styling */
+form {
+    background-color: var(--card-bg);
+    padding: 30px;
+    border-radius: 10px;
+    margin: 25px 0;
+    border: 1px solid var(--border-color);
+    max-width: 600px;
+}
+
+label {
+    display: block;
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+textarea {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--darker-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-light);
+    font-size: 1rem;
+    margin-bottom: 5px;
+    transition: var(--transition);
+    font-family: inherit;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #555;
+}
+
+button[type="submit"] {
+    background: linear-gradient(135deg, var(--primary-color), #c1121f);
+    color: white;
+    border: none;
+    padding: 14px 40px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 10px;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4);
+}
+
+/* Social Links */
+#contact a[href="#"] {
+    color: var(--text-muted);
+    text-decoration: none;
+    margin: 0 10px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+#contact a[href="#"]:hover {
+    color: var(--primary-color);
+}
+
+/* ============================================
+   TECHNICAL & BUDGET & TIMEFRAME
+   ============================================ */
+#technical h3,
+#budget h3,
+#timeframe h3 {
+    color: var(--primary-color);
+    margin-top: 25px;
+    font-size: 1.2rem;
+}
+
+#budget ul {
+    list-style: none;
+    padding: 0;
+}
+
+#budget li {
+    padding: 6px 0 6px 25px;
+    position: relative;
+    color: var(--text-muted);
+}
+
+#budget li::before {
+    content: '•';
+    color: var(--primary-color);
+    position: absolute;
+    left: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+footer {
+    background-color: var(--darker-bg);
+    text-align: center;
+    padding: 50px 20px 30px;
+    border-top: 3px solid var(--primary-color);
+    margin-top: 40px;
+}
+
+footer h3 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+    color: var(--text-light);
+}
+
+footer p {
+    color: var(--text-muted);
+    margin: 8px 0;
+}
+
+footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    margin: 0 10px;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+footer a:hover {
+    color: var(--primary-color);
+}
+
+footer p:last-child {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2.2rem;
+        letter-spacing: 2px;
+    }
+
+    header p {
+        font-size: 1rem;
+    }
+
+    nav {
+        padding: 12px 10px;
+        position: relative;
+    }
+
+    nav a {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        margin: 2px;
+    }
+
+    section {
+        padding: 40px 15px;
+    }
+
+    section h2 {
+        font-size: 1.7rem;
+    }
+
+    #home h2 {
+        font-size: 1.9rem;
+    }
+
+    #gallery img {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+        margin: 8px 0;
+    }
+
+    table {
+        font-size: 0.9rem;
+    }
+
+    th, td {
+        padding: 10px 12px;
+    }
+
+    form {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    nav a {
+        display: block;
+        margin: 3px 0;
+    }
+
+    section h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.text-center {
+    text-align: center;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+/* Animation for page load */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+section {
+    animation: fadeIn 0.6s ease-out forwards;
+}
