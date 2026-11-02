@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book an Appointment</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar"><strong>Book an Appointment</strong>
+  <nav><a href="index.html">Home</a> <a href="track.html">My Booking</a></nav>
+</header>
+<main class="container">
+  <div id="msg" class="msg" hidden></div>
+
+  <div class="grid-2">
+    <section class="card">
+      <h2>1. Choose a Date</h2>
+      <div class="cal-nav">
+        <button id="prevM" class="btn btn-ghost" type="button">&lt;</button>
+        <strong id="calTitle"></strong>
+        <button id="nextM" class="btn btn-ghost" type="button">&gt;</button>
+      </div>
+      <div class="cal-head"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+      <div id="cal" class="cal"></div>
+      <p id="dateNote" class="muted small"></p>
+
+      <h2>2. Choose a Time</h2>
+      <div id="slots" class="slots"><p class="muted">Select a date first.</p></div>
+    </section>
+
+    <section class="card">
+      <h2>3. Your Details</h2>
+      <label>Service
+        <select id="service"><option value="">Standard appointment</option></select>
+      </label>
+      <label>Full name <input id="fullName" maxlength="100" autocomplete="name"></label>
+      <label>Phone <input id="phone" placeholder="0821234567" autocomplete="tel"></label>
+      <label>Email <input id="email" type="email" autocomplete="email"></label>
+
+      <div id="review" class="review" hidden></div>
+      <button id="submit" class="btn btn-lg" type="button" disabled>Confirm Booking Request</button>
+    </section>
+  </div>
+</main>
+<script src="js/api.js"></script>
+<script>
+const state = { settings: null, date: null, start: null, view: new Date() };
+const $ = (id) => document.getElementById(id);
+function showMsg(text, isErr = true) {
+  const m = $('msg'); m.hidden = false; m.className = 'msg ' + (isErr ? 'err' : 'ok'); m.textContent = text;
+  if (!isErr) setTimeout(() => (m.hidden = true), 8000);
+}
+const OPEN = [5, 6, 0]; // will be replaced by settings.days_open
+
+function renderCalendar() {
+  const y = state.view.getFullYear(), mo = state.view.getMonth();
+  $('calTitle').textContent = state.view.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' });
+  const first = new Date(y, mo, 1).getDay(); // 0=Sun
+  const days = new Date(y, mo + 1, 0).getDate();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let html = '';
+  const lead = (first + 6) % 7; // Monday-first offset
+  for (let i = 0; i < lead; i++) html += '<span></span>';
+  for (let d = 1; d <= days; d++) {
+    const dt = new Date(y, mo, d);
+    const iso = `${y}-${String(mo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const open = state.settings.days_open.includes(dt.getDay());
+    const past = dt < today;
+    const cls = ['day', open ? 'open' : 'closed', past ? 'past' : '', state.date === iso ? 'sel' : ''].join(' ');
+    html += `<button type="button" class="${cls}" data-date="${iso}" ${open && !past ? '' : 'disabled'}>${d}</button>`;
+  }
+  $('cal').innerHTML = html;
+  $('cal').querySelectorAll('button.open').forEach(b => b.onclick = () => selectDate(b.dataset.date));
+}
+
+async function selectDate(iso) {
+  state.date = iso; state.start = null; renderCalendar();
+  $('slots').innerHTML = '<p class="muted">Checking availability…</p>';
+  try {
+    const a = await api('/api/availability?date=' + iso);
+    if (!a.open) { $('slots').innerHTML = `<p class="muted">${esc(a.reason)}</p>`; return; }
+    $('dateNote').textContent = '';
+    $('slots').innerHTML = a.slots.map(s =>
+      `<button type="button" class="slot ${s.available ? '' : 'taken'}" data-start="${s.start}"
+        ${s.available ? '' : 'disabled'}>${s.start} – ${s.end}${s.available ? '' : `<small>${esc(s.reason)}</small>`}</button>`).join('');
+    $('slots').querySelectorAll('button.slot:not(.taken)').forEach(b => b.onclick = () => {
+      state.start = b.dataset.start;
+      $('slots').querySelectorAll('.slot').forEach(x => x.classList.toggle('sel', x.dataset.start === state.start));
+      renderReview();
+    });
+  } catch (e) { $('slots').innerHTML = `<p class="err-text">${esc(e.message)}</p>`; }
+}
+
+function renderReview() {
+  const svc = $('service');
+  const svcText = svc.options[svc.selectedIndex].text;
+  $('review').hidden = false;
+  $('review').innerHTML = `<h3>Your Selection</h3>
+    <p><strong>${esc(svcText)}</strong><br>${state.date} at ${state.start}<br>
+    Price: <strong>${money(state.settings.default_price)}</strong>
+    ${Number(state.settings.deposit_amount) > 0 ? `<br>Deposit due: <strong>${money(state.settings.deposit_amount)}</strong>` : ''}</p>
+    <p class="small muted">You will receive EFT payment instructions. Your slot is reserved once you submit, and must be paid within ${state.settings.payment_deadline_hours} hours.</p>`;
+  $('submit').disabled = false;
+}
+
+$('submit').onclick = async () => {
+  $('submit').disabled = true;
+  try {
+    const data = await api('/api/bookings', { method: 'POST', body: {
+      date: state.date, startTime: state.start, serviceId: $('service').value || null,
+      fullName: $('fullName').value, phone: $('phone').value, email: $('email').value,
+    }});
+    sessionStorage.setItem('confirm', JSON.stringify({ reference: data.reference, email: $('email').value.trim() }));
+    location.href = 'confirmation.html';
+  } catch (e) { showMsg(e.message); $('submit').disabled = false; }
+};
+
+$('prevM').onclick = () => { state.view.setMonth(state.view.getMonth() - 1); renderCalendar(); };
+$('nextM').onclick = () => { state.view.setMonth(state.view.getMonth() + 1); renderCalendar(); };
+
+(async () => {
+  try {
+    state.settings = await api('/api/business');
+    const svcs = await api('/api/services');
+    svcs.forEach(s => $('service').insertAdjacentHTML('beforeend',
+      `<option value="${s.id}">${esc(s.name)} — ${money(s.price)}</option>`));
+  } catch (e) { state.settings = { days_open: OPEN, default_price: 0, deposit_amount: 0, payment_deadline_hours: 48 }; }
+  renderCalendar();
+})();
+</script>
+</body>
+</html>

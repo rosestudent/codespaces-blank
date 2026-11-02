@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Booking Confirmation</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar"><strong>Booking Confirmation</strong>
+  <nav><a href="index.html">Home</a> <a href="booking.html">Book Again</a></nav>
+</header>
+<main class="container">
+  <div id="msg" class="msg" hidden></div>
+  <div id="content"><p class="muted">Loading…</p></div>
+</main>
+<script src="js/api.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const saved = JSON.parse(sessionStorage.getItem('confirm') || 'null');
+function showMsg(t, err = true) { const m = $('msg'); m.hidden = false; m.className = 'msg ' + (err ? 'err' : 'ok'); m.textContent = t; if (!err) setTimeout(() => m.hidden = true, 8000); }
+
+const STATUS_TEXT = {
+  awaiting_payment: 'Awaiting payment — please pay by EFT before the deadline.',
+  proof_submitted: 'Proof of payment submitted — awaiting review.',
+  under_review: 'Payment under review.',
+  confirmed: 'Confirmed — see you then!',
+  payment_rejected: 'Payment was rejected — please contact us or rebook.',
+  expired: 'Expired — the payment deadline passed and the slot was released.',
+  cancelled: 'Cancelled.',
+  completed: 'Completed.',
+};
+
+async function load() {
+  if (!saved) { $('content').innerHTML = '<p class="err-text">No recent booking found. <a href="track.html">Look up a booking</a>.</p>'; return; }
+  try {
+    const b = await api(`/api/bookings/${encodeURIComponent(saved.reference)}?email=${encodeURIComponent(saved.email)}`);
+    $('content').innerHTML = `
+      <div class="card">
+        <h1>Thank you, ${esc(b.full_name)}!</h1>
+        <p class="badge">${esc(STATUS_TEXT[b.status] || b.status)}</p>
+        <table class="table">
+          <tr><th>Booking reference</th><td><strong>${esc(b.reference)}</strong></td></tr>
+          <tr><th>Service</th><td>${esc(b.service)}</td></tr>
+          <tr><th>Date</th><td>${esc(b.date)}</td></tr>
+          <tr><th>Time</th><td>${esc(b.start_time)} – ${esc(b.end_time)}</td></tr>
+          <tr><th>Total due</th><td>${money(b.total_price)}</td></tr>
+          ${Number(b.deposit_amount) > 0 ? `<tr><th>Deposit</th><td>${money(b.deposit_amount)}</td></tr>` : ''}
+          <tr><th>Payment status</th><td>${esc(b.payment_status)}</td></tr>
+          <tr><th>Pay by (deadline)</th><td>${esc(b.payment_deadline)}</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h2>EFT Payment Instructions</h2>
+        <table class="table">
+          <tr><th>Account holder</th><td>${esc(b.eft.account_holder)}</td></tr>
+          <tr><th>Bank</th><td>${esc(b.eft.bank_name)}</td></tr>
+          <tr><th>Account number</th><td>${esc(b.eft.account_number)}</td></tr>
+          <tr><th>Branch code</th><td>${esc(b.eft.branch_code)}</td></tr>
+          <tr><th>Account type</th><td>${esc(b.eft.account_type)}</td></tr>
+          <tr><th>Your unique payment reference</th><td><strong class="ref">${esc(b.payment_reference)}</strong></td></tr>
+        </table>
+        <p>${esc(b.eft.payment_instructions)}</p>
+        <p class="small muted">Use the exact reference above or we cannot match your payment. Your booking is only confirmed once payment is verified.</p>
+      </div>
+      <div class="card">
+        <h2>Upload Proof of Payment</h2>
+        ${b.proof_uploaded ? `<p>✅ Proof uploaded (${b.proofs.length} file(s)), status: <strong>${esc(b.payment_status)}</strong>.</p>` : ''}
+        ${['awaiting_payment', 'payment_rejected'].includes(b.status) || ['awaiting','rejected','info_requested'].includes(b.payment_status) ? `
+        <form id="upForm">
+          <input type="file" id="file" accept=".pdf,.png,.jpg,.jpeg" required>
+          <button class="btn" type="submit">Upload (PDF, PNG or JPEG, max 5 MB)</button>
+        </form>` : '<p class="muted">No upload needed for the current status.</p>'}
+        ${b.payment_status === 'rejected' && b.rejection_reason ? `<p class="err-text">Reason: ${esc(b.rejection_reason)}</p>` : ''}
+      </div>
+      <p class="small muted">Cancellation policy: ${esc(b.cancellation_policy_note || '')} You can cancel or request a reschedule from <a href="track.html">My Booking</a>.</p>`;
+    const f = $('upForm');
+    if (f) f.onsubmit = async (ev) => {
+      ev.preventDefault();
+      const fd = new FormData();
+      fd.append('proof', $('file').files[0]);
+      fd.append('email', saved.email);
+      try { await api(`/api/bookings/${encodeURIComponent(saved.reference)}/payment-proof`, { method: 'POST', form: fd });
+        showMsg('Proof of payment uploaded. We will review it shortly.', false); load();
+      } catch (e) { showMsg(e.message); }
+    };
+  } catch (e) { $('content').innerHTML = `<p class="err-text">${esc(e.message)}</p>`; }
+}
+load();
+</script>
+</body>
+</html>

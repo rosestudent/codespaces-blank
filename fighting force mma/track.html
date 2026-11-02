@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Booking</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar"><strong>My Booking</strong>
+  <nav><a href="index.html">Home</a> <a href="booking.html">Book Now</a></nav>
+</header>
+<main class="container narrow">
+  <div id="msg" class="msg" hidden></div>
+  <section class="card">
+    <h1>Check Your Booking Status</h1>
+    <label>Booking reference <input id="ref" placeholder="BKG-XXXXXXXX"></label>
+    <label>Email address used for the booking <input id="email" type="email"></label>
+    <button id="find" class="btn">Find My Booking</button>
+  </section>
+  <div id="result"></div>
+</main>
+<script src="js/api.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+function showMsg(t, err = true) { const m = $('msg'); m.hidden = false; m.className = 'msg ' + (err ? 'err' : 'ok'); m.textContent = t; }
+$('find').onclick = async () => {
+  const ref = $('ref').value.trim().toUpperCase(), email = $('email').value.trim();
+  try {
+    const b = await api(`/api/bookings/${encodeURIComponent(ref)}?email=${encodeURIComponent(email)}`);
+    sessionStorage.setItem('confirm', JSON.stringify({ reference: ref, email }));
+    $('result').innerHTML = `<section class="card">
+      <h2>${esc(b.service)} — ${esc(b.date)}, ${esc(b.start_time)}–${esc(b.end_time)}</h2>
+      <p>Status: <strong class="badge">${esc(b.status)}</strong> · Payment: <strong>${esc(b.payment_status)}</strong>
+        ${b.proof_uploaded ? ' · Proof uploaded ✅' : ''}</p>
+      <p>Reference <strong>${esc(b.reference)}</strong> · Payment ref <strong>${esc(b.payment_reference)}</strong> · Amount ${money(b.total_price)}</p>
+      <p><a class="btn btn-ghost" href="confirmation.html">View full details & upload proof</a></p>
+      ${['awaiting_payment','proof_submitted','under_review','confirmed'].includes(b.status) ? `
+      <hr><h3>Request Changes</h3>
+      <div class="row">
+        <input type="date" id="nDate"><input type="time" id="nTime" step="3600" list="hours">
+        <datalist id="hours"><option>09:00</option><option>11:00</option><option>13:00</option><option>15:00</option></datalist>
+        <button class="btn btn-ghost" id="resched">Request Reschedule</button>
+        <button class="btn btn-danger" id="cancel">Cancel Booking</button>
+      </div>` : ''}
+    </section>`;
+    const c = $('cancel');
+    if (c) c.onclick = async () => {
+      if (!confirm('Cancel this booking?')) return;
+      try { const r = await api(`/api/bookings/${ref}/cancel`, { method: 'POST', body: { email } });
+        showMsg('Booking cancelled.', false); $('find').click();
+      } catch (e) { showMsg(e.message); }
+    };
+    const r = $('resched');
+    if (r) r.onclick = async () => {
+      try { await api(`/api/bookings/${ref}/reschedule-request`, { method: 'POST', body: { email, date: $('nDate').value, startTime: $('nTime').value } });
+        showMsg('Booking rescheduled to the new slot.', false); $('find').click();
+      } catch (e) { showMsg(e.message); }
+    };
+  } catch (e) { $('result').innerHTML = ''; showMsg(e.message); }
+};
+</script>
+</body>
+</html>

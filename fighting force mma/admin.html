@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar"><strong>Admin Dashboard</strong>
+  <nav id="nav" hidden><a href="index.html">View site</a> <a href="#" id="logout">Log out</a></nav>
+</header>
+<main class="container">
+  <div id="msg" class="msg" hidden></div>
+
+  <section id="loginCard" class="card narrow">
+    <h1>Administrator Login</h1>
+    <label>Email <input id="aEmail" type="email" autocomplete="username"></label>
+    <label>Password <input id="aPass" type="password" autocomplete="current-password"></label>
+    <button id="login" class="btn">Log in</button>
+  </section>
+
+  <div id="dash" hidden>
+    <section id="stats" class="stats"></section>
+
+    <section class="card">
+      <h2>Bookings</h2>
+      <div class="row wrap">
+        <input id="fSearch" placeholder="Name / email / phone">
+        <input id="fRef" placeholder="Reference">
+        <select id="fStatus"><option value="">Any status</option>
+          <option>awaiting_payment</option><option>proof_submitted</option><option>under_review</option>
+          <option>confirmed</option><option>payment_rejected</option><option>expired</option>
+          <option>cancelled</option><option>completed</option></select>
+        <select id="fPay"><option value="">Any payment</option>
+          <option>awaiting</option><option>submitted</option><option>under_review</option>
+          <option>verified</option><option>rejected</option><option>info_requested</option></select>
+        <input id="fFrom" type="date"><input id="fTo" type="date">
+        <button id="fGo" class="btn btn-ghost">Filter</button>
+      </div>
+      <div id="bookings" class="table-wrap"></div>
+      <div id="detail"></div>
+    </section>
+
+    <section class="card">
+      <h2>Payment Proofs Awaiting Review</h2>
+      <div id="proofs" class="table-wrap"></div>
+    </section>
+
+    <section class="grid-2">
+      <div class="card">
+        <h2>Business & EFT Settings</h2>
+        <div id="settingsForm"></div>
+        <button id="saveSettings" class="btn">Save Settings</button>
+      </div>
+      <div class="card">
+        <h2>Blocked Dates / Slots</h2>
+        <div class="row"><input id="bDate" type="date"><input id="bTime" type="time" step="3600">
+          <input id="bReason" placeholder="Reason (optional)"><button id="bAdd" class="btn btn-ghost">Block</button></div>
+        <p class="small muted">Leave time empty to block the whole day.</p>
+        <div id="blocked"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Audit Log (latest 300)</h2>
+      <div id="audit" class="table-wrap"></div>
+    </section>
+  </div>
+</main>
+<script src="js/api.js"></script>
+<script>
+let CSRF = null;
+const $ = (id) => document.getElementById(id);
+function showMsg(t, err = true) { const m = $('msg'); m.hidden = false; m.className = 'msg ' + (err ? 'err' : 'ok'); m.textContent = t; if (!err) setTimeout(() => m.hidden = true, 6000); }
+const admin = (p, o = {}) => api('/api/admin' + p, { ...o, headers: { 'X-CSRF-Token': CSRF || '' } });
+
+const STATUSES = ['awaiting_payment','proof_submitted','under_review','confirmed','payment_rejected','expired','cancelled','completed'];
+
+async function boot() {
+  try { const me = await api('/api/admin/me'); await showDash(me); }
+  catch { $('loginCard').hidden = false; }
+}
+$('login').onclick = async () => {
+  try {
+    const me = await api('/api/admin/login', { method: 'POST', body: { email: $('aEmail').value, password: $('aPass').value } });
+    CSRF = me.csrf_token; await showDash(me);
+  } catch (e) { showMsg(e.message); }
+};
+$('logout').onclick = async () => { try { await admin('/logout', { method: 'POST' }); } catch {} location.reload(); };
+
+async function showDash(me) {
+  $('loginCard').hidden = true; $('dash').hidden = false; $('nav').hidden = false;
+  loadStats(); loadBookings(); loadProofs(); loadSettings(); loadBlocked(); loadAudit();
+}
+
+async function loadStats() {
+  const s = await admin('/overview');
+  $('stats').innerHTML = Object.entries({
+    'Today': s.today_bookings, 'Upcoming': s.upcoming_bookings, 'Awaiting payment': s.awaiting_payment,
+    'Proofs to review': s.proofs_awaiting_review, 'Confirmed': s.confirmed_upcoming,
+    'Cancelled/Expired': s.cancelled_or_expired, 'Verified revenue': money(s.total_verified_revenue),
+  }).map(([k, v]) => `<div class="stat"><strong>${v}</strong><span>${k}</span></div>`).join('');
+}
+
+async function loadBookings() {
+  const q = new URLSearchParams();
+  if ($('fSearch').value) q.set('search', $('fSearch').value);
+  if ($('fRef').value) q.set('reference', $('fRef').value.toUpperCase());
+  if ($('fStatus').value) q.set('status', $('fStatus').value);
+  if ($('fPay').value) q.set('paymentStatus', $('fPay').value);
+  if ($('fFrom').value) q.set('dateFrom', $('fFrom').value);
+  if ($('fTo').value) q.set('dateTo', $('fTo').value);
+  const rows = await admin('/bookings?' + q);
+  $('bookings').innerHTML = rows.length ? `<table class="table"><tr><th>Ref</th><th>Customer</th><th>Date</th><th>Time</th><th>Status</th><th>Payment</th><th>Amount</th><th></th></tr>` +
+    rows.map(b => `<tr><td>${esc(b.reference)}</td><td>${esc(b.full_name)}<br><small>${esc(b.email)}<br>${esc(b.phone)}</small></td>
+      <td>${esc(b.booking_date)}</td><td>${esc(String(b.start_time).slice(0,5))}</td>
+      <td><span class="badge">${esc(b.status)}</span></td><td>${esc(b.payment_status || '')}</td>
+      <td>${money(b.total_price)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="viewBooking(${b.id})">View</button></td></tr>`).join('') + '</table>'
+    : '<p class="muted">No bookings match.</p>';
+}
+$('fGo').onclick = loadBookings;
+
+window.viewBooking = async (id) => {
+  const b = await admin('/bookings/' + id);
+  $('detail').innerHTML = `<div class="card inner">
+    <h3>${esc(b.reference)} — ${esc(b.full_name)} (${esc(b.email)}, ${esc(b.phone)})</h3>
+    <p>${esc(b.booking_date)} ${esc(String(b.start_time).slice(0,5))}–${esc(String(b.end_time).slice(0,5))} ·
+       ${esc(b.service_name || 'Standard')} · ${money(b.total_price)} ·
+       Status <strong>${esc(b.status)}</strong> · Payment <strong>${esc(b.payment_status)}</strong>
+       ${b.amount_verified != null ? `· verified ${money(b.amount_verified)}` : ''}</p>
+    ${b.proofs.map(p => `<p>📎 <a href="/api/admin/payment-proofs/${p.id}/file" target="_blank">${esc(p.original_name)}</a>
+       (${Math.round(p.size_bytes/1024)} KB, ${esc(p.created_at)})</p>`).join('')}
+    <div class="row wrap">
+      <select id="dStatus">${STATUSES.map(s => `<option ${s === b.status ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <button class="btn btn-ghost btn-sm" onclick="setStatus(${b.id})">Set status</button>
+      <input id="dDate" type="date" value="${esc(b.booking_date)}">
+      <input id="dTime" type="time" step="3600" value="${esc(String(b.start_time).slice(0,5))}">
+      <button class="btn btn-ghost btn-sm" onclick="resched(${b.id})">Reschedule</button>
+    </div>
+    ${['submitted','under_review','info_requested'].includes(b.payment_status) ? `
+    <div class="row wrap">
+      <input id="dAmount" type="number" step="0.01" placeholder="Amount verified">
+      <button class="btn btn-sm" onclick="pay(${b.payment_id},'verify')">✔ Verify payment</button>
+      <input id="dReason" placeholder="Rejection / info reason">
+      <button class="btn btn-danger btn-sm" onclick="pay(${b.payment_id},'reject')">✘ Reject</button>
+      <button class="btn btn-ghost btn-sm" onclick="pay(${b.payment_id},'request_info')">Request info</button>
+    </div>` : ''}
+  </div>`;
+};
+window.setStatus = async (id) => { try { await admin(`/bookings/${id}/status`, { method: 'PATCH', body: { status: $('dStatus').value } }); showMsg('Status updated', false); loadBookings(); viewBooking(id); } catch (e) { showMsg(e.message); } };
+window.resched = async (id) => { try { await admin(`/bookings/${id}/reschedule`, { method: 'PATCH', body: { date: $('dDate').value, startTime: $('dTime').value } }); showMsg('Rescheduled', false); loadBookings(); viewBooking(id); } catch (e) { showMsg(e.message); } };
+window.pay = async (pid, action) => {
+  try { await admin(`/payments/${pid}`, { method: 'PATCH', body: { action, amount: $('dAmount')?.value, reason: $('dReason')?.value } });
+    showMsg('Payment updated', false); loadBookings(); loadStats(); } catch (e) { showMsg(e.message); }
+};
+
+async function loadProofs() {
+  const rows = await admin('/payment-proofs');
+  $('proofs').innerHTML = rows.length ? `<table class="table"><tr><th>Booking</th><th>File</th><th>Payment status</th><th>Uploaded</th></tr>` +
+    rows.map(p => `<tr><td>${esc(p.booking_reference)}</td>
+      <td><a href="/api/admin/payment-proofs/${p.id}/file" target="_blank">${esc(p.original_name)}</a></td>
+      <td>${esc(p.payment_status)}</td><td>${esc(p.created_at)}</td></tr>`).join('') + '</table>'
+    : '<p class="muted">Nothing awaiting review.</p>';
+}
+
+async function loadSettings() {
+  const s = await admin('/settings');
+  const fields = ['business_name','business_description','contact_email','contact_phone','open_time','close_time',
+    'default_price','deposit_amount','payment_deadline_hours','account_holder','bank_name','account_number',
+    'branch_code','account_type','payment_instructions','cancellation_policy','privacy_notice'];
+  $('settingsForm').innerHTML = fields.map(k =>
+    `<label>${k.replace(/_/g, ' ')} ${k.includes('description') || k.includes('instructions') || k.includes('policy') || k.includes('notice')
+      ? `<textarea data-k="${k}">${esc(s[k])}</textarea>` : `<input data-k="${k}" value="${esc(s[k])}">`}</label>`).join('');
+}
+$('saveSettings').onclick = async () => {
+  const patch = {}; document.querySelectorAll('#settingsForm [data-k]').forEach(el => patch[el.dataset.k] = el.value);
+  try { await admin('/settings', { method: 'PATCH', body: patch }); showMsg('Settings saved', false); } catch (e) { showMsg(e.message); }
+};
+
+async function loadBlocked() {
+  const rows = await admin('/blocked-slots');
+  $('blocked').innerHTML = rows.map(b => `<div class="row"><span>${esc(b.blocked_date)} ${b.start_time ? esc(String(b.start_time).slice(0,5)) : '(whole day)'}</span>
+    <button class="btn btn-danger btn-sm" onclick="unblock(${b.id})">Remove</button></div>`).join('') || '<p class="muted">None.</p>';
+}
+$('bAdd').onclick = async () => { try { await admin('/blocked-slots', { method: 'POST', body: { date: $('bDate').value, startTime: $('bTime').value || null, reason: $('bReason').value } }); loadBlocked(); } catch (e) { showMsg(e.message); } };
+window.unblock = async (id) => { await admin('/blocked-slots/' + id, { method: 'DELETE' }); loadBlocked(); };
+
+async function loadAudit() {
+  const rows = await admin('/audit-logs');
+  $('audit').innerHTML = `<table class="table"><tr><th>When</th><th>Admin</th><th>Action</th><th>Entity</th><th>Details</th></tr>` +
+    rows.map(l => `<tr><td>${esc(l.created_at)}</td><td>${esc(l.admin_name || 'system')}</td><td>${esc(l.action)}</td>
+      <td>${esc(l.entity)} #${esc(l.entity_id || '')}</td><td><small>${esc(l.details || '')}</small></td></tr>`).join('') + '</table>';
+}
+boot();
+</script>
+</body>
+</html>
