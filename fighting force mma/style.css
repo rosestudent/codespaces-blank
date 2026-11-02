@@ -10,7 +10,7 @@
 }
 
 :root {
-    --primary-color: #114ab4;        /* Fighting red */
+    --primary-color: #e63946;        /* Fighting red */
     --secondary-color: #f4a261;      /* Warm orange */
     --dark-bg: #0a0a0a;              /* Deep black */
     --darker-bg: #050505;            /* Almost black */
@@ -109,12 +109,6 @@ nav a:hover {
     color: var(--primary-color);
     background-color: rgba(230, 57, 70, 0.1);
     transform: translateY(-2px);
-}
-
-/* Remove the pipe separators from HTML or hide them */
-nav a[href="#home"]::before,
-nav a::after {
-    content: none;
 }
 
 /* ============================================
@@ -386,12 +380,12 @@ tr:last-child td {
 /* ============================================
    TESTIMONIALS
    ============================================ */
-#testimonials h3 {
+#reviews h3 {
     color: var(--secondary-color);
     margin-top: 30px;
 }
 
-#testimonials p {
+#reviews p {
     font-style: italic;
     background-color: var(--card-bg);
     padding: 20px;
@@ -400,7 +394,7 @@ tr:last-child td {
     position: relative;
 }
 
-#testimonials p:last-of-type {
+#reviews p:last-of-type {
     background: none;
     padding: 10px 0 0 20px;
     border: none;
@@ -467,7 +461,8 @@ textarea::placeholder {
     color: #555;
 }
 
-button[type="submit"] {
+button[type="submit"],
+input[type="submit"] {
     background: linear-gradient(135deg, var(--primary-color), #c1121f);
     color: white;
     border: none;
@@ -482,7 +477,8 @@ button[type="submit"] {
     margin-top: 10px;
 }
 
-button[type="submit"]:hover {
+button[type="submit"]:hover,
+input[type="submit"]:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4);
 }
